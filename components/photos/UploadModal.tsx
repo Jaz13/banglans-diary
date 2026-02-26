@@ -378,7 +378,7 @@ export function UploadModal({ albums: initialAlbums, defaultAlbumId, onClose, on
             <textarea
               value={memoryNote}
               onChange={(e) => setMemoryNote(e.target.value)}
-              placeholder="It was the night of the Crown Theatre trip, probably 1991. Chengachi bet everyone he could eat three biriyanis and then spent the night on the hostel roof…"
+              placeholder="What went down that day? The full story, don't hold back…"
               rows={3}
               className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none focus:ring-2 focus:ring-primary/30 resize-none italic placeholder:not-italic"
             />
