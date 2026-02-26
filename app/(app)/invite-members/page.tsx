@@ -34,14 +34,6 @@ export default function InviteMembersPage() {
 
   const loadData = useCallback(async () => {
     try {
-      // Check current user role
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-        setUserRole(profile?.role || 'member')
-      }
-
       const [invitesRes, membersRes] = await Promise.all([
         fetch('/api/invite'),
         fetch('/api/members'),
@@ -54,7 +46,18 @@ export default function InviteMembersPage() {
     setLoading(false)
   }, [])
 
-  useEffect(() => { loadData() }, [loadData])
+  useEffect(() => {
+    // Check role quickly, then load data in parallel
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        supabase.from('profiles').select('role').eq('id', user.id).single().then(({ data: profile }) => {
+          setUserRole(profile?.role || 'member')
+        })
+      }
+    })
+    loadData()
+  }, [loadData])
 
   // Role gate — only admins can access this page
   if (userRole !== null && userRole !== 'admin') {
@@ -394,8 +397,28 @@ export default function InviteMembersPage() {
         </form>
       </div>
 
+      {/* Loading skeletons for members/invites */}
+      {loading && (
+        <div className="space-y-6">
+          <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
+            <div className="h-5 w-40 bg-secondary rounded animate-pulse mb-4" />
+            <div className="space-y-3">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-secondary animate-pulse">
+                  <div className="w-10 h-10 rounded-full bg-border" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3.5 w-32 bg-border rounded" />
+                    <div className="h-3 w-48 bg-border rounded" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Banglan members */}
-      {members.length > 0 && (
+      {!loading && members.length > 0 && (
         <div className="bg-card rounded-2xl border border-border shadow-sm p-6 mb-6">
           <div className="flex items-center gap-2 mb-4">
             <UserCheck className="w-5 h-5 text-primary" />
@@ -433,7 +456,7 @@ export default function InviteMembersPage() {
       )}
 
       {/* Pending & expired invites */}
-      {invites.filter(i => i.status !== 'accepted').length > 0 && (
+      {!loading && invites.filter(i => i.status !== 'accepted').length > 0 && (
         <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
