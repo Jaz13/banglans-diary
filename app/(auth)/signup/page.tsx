@@ -2,15 +2,17 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Guitar, Loader2, Mail, CheckCircle2 } from 'lucide-react'
+import { Guitar, Loader2, Mail, CheckCircle2, KeyRound } from 'lucide-react'
 import Link from 'next/link'
 
 function SignupForm() {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [magicLinkSent, setMagicLinkSent] = useState(false)
+  const [usePassword, setUsePassword] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteToken, setInviteToken] = useState('')
   const [inviteRole, setInviteRole] = useState('admin')
@@ -63,30 +65,97 @@ function SignupForm() {
     return '/auth/callback'
   }
 
-  const handleSignup = async (e: React.FormEvent) => {
+  // Get the final email to use
+  const getSignupEmail = () => emailEditable ? email.trim() : inviteEmail.trim()
+
+  // ── Password signup ───────────────────────────────────────────────
+  const handlePasswordSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!isFirstUser && !inviteToken) {
       setError('You need a valid invite link to join.')
       return
     }
-    if (!fullName.trim()) {
-      setError('Please enter your name.')
-      return
-    }
-
-    // Determine which email to use
-    const signupEmail = emailEditable ? email.trim() : inviteEmail.trim()
-    if (!signupEmail) {
-      setError('Please enter your email.')
-      return
-    }
+    if (!fullName.trim()) { setError('Please enter your name.'); return }
+    const signupEmail = getSignupEmail()
+    if (!signupEmail) { setError('Please enter your email.'); return }
+    if (password.length < 6) { setError('Password must be at least 6 characters.'); return }
 
     setLoading(true)
     setError('')
 
     const supabase = createClient()
 
-    // Use magic link signup (signInWithOtp creates user if they don't exist)
+    // signUp creates user + auto-signs them in
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email: signupEmail,
+      password,
+      options: {
+        data: { full_name: fullName.trim() },
+      },
+    })
+
+    if (signUpError) {
+      setError(signUpError.message)
+      setLoading(false)
+      return
+    }
+
+    const userId = data.user?.id
+    if (!userId) {
+      setError('Signup failed. Please try again.')
+      setLoading(false)
+      return
+    }
+
+    // Accept invite if we have a token
+    if (inviteToken) {
+      try {
+        await fetch('/api/invite/accept', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: inviteToken, userId }),
+        })
+      } catch { /* silent */ }
+    }
+
+    // Create profile (first user = admin, invited = use invite role)
+    const role = isFirstUser ? 'admin' : (inviteRole || 'member')
+    try {
+      const { createClient: createServiceClient } = await import('@supabase/supabase-js')
+      // Use the authenticated client to upsert profile
+      await supabase.from('profiles').upsert({
+        id: userId,
+        email: signupEmail,
+        full_name: fullName.trim(),
+        role,
+      }, { onConflict: 'id' })
+    } catch { /* silent — PostAuthSetup will handle if this fails */ }
+
+    // Store as backup for PostAuthSetup
+    localStorage.setItem('banglan_full_name', fullName.trim())
+    if (inviteToken) localStorage.setItem('banglan_invite_token', inviteToken)
+    if (isFirstUser) localStorage.setItem('banglan_is_first_user', 'true')
+
+    // Redirect to dashboard
+    router.push('/dashboard')
+  }
+
+  // ── Magic link signup ─────────────────────────────────────────────
+  const handleMagicLinkSignup = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!isFirstUser && !inviteToken) {
+      setError('You need a valid invite link to join.')
+      return
+    }
+    if (!fullName.trim()) { setError('Please enter your name.'); return }
+    const signupEmail = getSignupEmail()
+    if (!signupEmail) { setError('Please enter your email.'); return }
+
+    setLoading(true)
+    setError('')
+
+    const supabase = createClient()
+
     const { error: otpError } = await supabase.auth.signInWithOtp({
       email: signupEmail,
       options: {
@@ -102,13 +171,9 @@ function SignupForm() {
     }
 
     // Store signup data for after auth callback
-    if (inviteToken) {
-      localStorage.setItem('banglan_invite_token', inviteToken)
-    }
+    if (inviteToken) localStorage.setItem('banglan_invite_token', inviteToken)
     localStorage.setItem('banglan_full_name', fullName.trim())
-    if (isFirstUser) {
-      localStorage.setItem('banglan_is_first_user', 'true')
-    }
+    if (isFirstUser) localStorage.setItem('banglan_is_first_user', 'true')
 
     setMagicLinkSent(true)
     setLoading(false)
@@ -146,12 +211,23 @@ function SignupForm() {
               Click the link in the email to join the Banglans.<br />
               No password needed. Check spam if you don&apos;t see it.
             </p>
-            <button
-              onClick={() => { setMagicLinkSent(false); setLoading(false) }}
-              className="w-full py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
-            >
-              Try again
-            </button>
+            <div className="space-y-3">
+              <button
+                onClick={() => { setMagicLinkSent(false); setLoading(false) }}
+                className="w-full py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+              >
+                Try again
+              </button>
+              <button
+                onClick={() => { setMagicLinkSent(false); setUsePassword(true) }}
+                className="text-xs text-muted-foreground hover:text-primary transition-colors"
+              >
+                <span className="flex items-center justify-center gap-1.5">
+                  <KeyRound className="w-3 h-3" />
+                  Didn&apos;t get the email? Sign up with password instead
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -164,7 +240,7 @@ function SignupForm() {
         <div className="px-8 pt-10 pb-6 text-center border-b border-border">
           <div className="flex items-center justify-center gap-2 mb-3">
             <Guitar className="w-7 h-7 text-primary" />
-            <span className="font-rock text-3xl neon-flicker">BANGLANS DIARY</span>
+            <span className="font-rock text-3xl neon-flicker">BANGLAN&apos;S DIARY</span>
           </div>
           <p className="text-muted-foreground text-sm mt-2">
             {isFirstUser
@@ -173,7 +249,7 @@ function SignupForm() {
           </p>
         </div>
         <div className="px-8 py-8">
-          <form onSubmit={handleSignup} className="space-y-4">
+          <form onSubmit={usePassword ? handlePasswordSignup : handleMagicLinkSignup} className="space-y-4">
             {/* Email */}
             <div>
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">Your Email</label>
@@ -208,6 +284,22 @@ function SignupForm() {
               />
             </div>
 
+            {/* Password field — shown when usePassword is true */}
+            {usePassword && (
+              <div className="animate-in slide-in-from-top-1 duration-200">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">Password</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="At least 6 characters"
+                  required
+                  minLength={6}
+                  className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+                />
+              </div>
+            )}
+
             {error && (
               <div className="bg-destructive/10 border border-destructive/30 rounded-xl px-4 py-3">
                 <p className="text-sm text-destructive">{error}</p>
@@ -220,14 +312,33 @@ function SignupForm() {
               className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
             >
               {loading ? (
-                <><Loader2 className="w-4 h-4 animate-spin" />Sending magic link…</>
+                <><Loader2 className="w-4 h-4 animate-spin" />{usePassword ? 'Creating account…' : 'Sending magic link…'}</>
+              ) : usePassword ? (
+                <><KeyRound className="w-4 h-4" />{isFirstUser ? 'Create Admin Account 🤘' : 'Join the Banglans 🔥'}</>
               ) : (
                 <><Mail className="w-4 h-4" />{isFirstUser ? 'Create Admin Account 🤘' : 'Join the Banglans 🔥'}</>
               )}
             </button>
 
+            {/* Toggle between magic link and password */}
+            <button
+              type="button"
+              onClick={() => { setUsePassword(!usePassword); setError('') }}
+              className="w-full text-center text-xs text-muted-foreground hover:text-primary transition-colors py-1"
+            >
+              <span className="flex items-center justify-center gap-1.5">
+                {usePassword ? (
+                  <><Mail className="w-3 h-3" />Use magic link instead (no password)</>
+                ) : (
+                  <><KeyRound className="w-3 h-3" />Sign up with password instead</>
+                )}
+              </span>
+            </button>
+
             <p className="text-center text-xs text-muted-foreground">
-              No password needed — we&apos;ll email you a magic link
+              {usePassword
+                ? 'Create a password to sign in directly — no email verification needed'
+                : 'No password needed — we\'ll email you a magic link'}
             </p>
           </form>
         </div>
