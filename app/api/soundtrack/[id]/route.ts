@@ -17,7 +17,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const admin = getAdmin()
   const { data, error } = await admin
     .from('soundtrack')
-    .update({ ...body, updated_at: new Date().toISOString() })
+    .update({ ...body })
     .eq('id', id)
     .select('*, adder:profiles!added_by(id, full_name, nickname)')
     .single()
