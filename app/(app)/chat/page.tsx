@@ -134,13 +134,32 @@ export default function ChatPage() {
     setSending(true)
     setInput('')
 
-    const { error } = await supabase
+    // Optimistic: add message instantly to local state
+    const optimisticId = 'opt-' + Date.now()
+    const optimisticMsg: ChatMessage = {
+      id: optimisticId,
+      content: text,
+      user_id: currentUser.id,
+      created_at: new Date().toISOString(),
+      user: currentUser,
+    }
+    setMessages(prev => [...prev, optimisticMsg])
+    setTimeout(() => scrollToBottom(true), 30)
+
+    const { data, error } = await supabase
       .from('chat_messages')
       .insert({ content: text, user_id: currentUser.id })
+      .select('id')
+      .single()
 
     if (error) {
-      setInput(text) // restore on error
+      // Remove optimistic message and restore input
+      setMessages(prev => prev.filter(m => m.id !== optimisticId))
+      setInput(text)
       console.error('Chat send error:', error)
+    } else if (data) {
+      // Replace optimistic message with real one (so realtime doesn't duplicate)
+      setMessages(prev => prev.map(m => m.id === optimisticId ? { ...m, id: data.id } : m))
     }
     setSending(false)
     inputRef.current?.focus()
