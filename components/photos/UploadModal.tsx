@@ -175,6 +175,40 @@ export function UploadModal({ albums: initialAlbums, defaultAlbumId, onClose, on
   const imageCount = mediaFiles.filter((m) => m.type === 'image').length
   const videoCount = mediaFiles.filter((m) => m.type === 'video').length
 
+  // Full-screen uploading overlay — replaces the modal content while uploading
+  if (uploading) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
+        <div className="flex flex-col items-center gap-6 px-8 max-w-sm w-full text-center">
+          {/* Spinning amber ring */}
+          <div className="relative w-20 h-20">
+            <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-primary animate-spin" />
+            <Upload className="absolute inset-0 m-auto w-8 h-8 text-primary" />
+          </div>
+
+          <div>
+            <p className="font-rock text-2xl text-primary tracking-wider mb-1">UPLOADING</p>
+            <p className="text-sm text-muted-foreground">{statusMsg || 'Sending to the diary...'}</p>
+          </div>
+
+          {/* Progress bar */}
+          <div className="w-full">
+            <div className="h-2 bg-secondary rounded-full overflow-hidden mb-2">
+              <div
+                className="h-full bg-primary rounded-full transition-all duration-500 shadow-[0_0_8px_oklch(0.75_0.17_68/0.6)]"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <p className="text-xs font-mono text-primary">{progress}%</p>
+          </div>
+
+          <p className="text-xs text-muted-foreground/60">Don't close this window</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="w-full max-w-lg bg-card rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-border animate-in slide-in-from-bottom-6 sm:slide-in-from-bottom-2 sm:zoom-in-95 duration-300 ease-out">
@@ -388,17 +422,6 @@ export function UploadModal({ albums: initialAlbums, defaultAlbumId, onClose, on
             <div className="flex items-start gap-2 bg-destructive/10 border border-destructive/20 rounded-xl px-4 py-3">
               <AlertCircle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
               <p className="text-sm text-destructive">{error}</p>
-            </div>
-          )}
-
-          {uploading && (
-            <div>
-              <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                <div className="h-full bg-primary rounded-full transition-all duration-300 shadow-[0_0_8px_oklch(0.75_0.17_68/0.5)]" style={{ width: `${progress}%` }} />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1 text-center">
-                {statusMsg || `Uploading ${progress}%...`} {videoCount > 0 && '(videos may take a moment)'}
-              </p>
             </div>
           )}
 
