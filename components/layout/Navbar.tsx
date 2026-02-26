@@ -3,7 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Guitar, Image, BookOpen, Calendar, Map, Trophy, Music, MessageSquare, Users, Settings, LogOut, Plus, Menu, X, MessagesSquare } from 'lucide-react'
+import { Guitar, Image, BookOpen, Calendar, Map, Trophy, Music, MessageSquare, Users, Settings, LogOut, Plus, Menu, X, MessagesSquare, BarChart3 } from 'lucide-react'
 import type { User } from '@/types'
 
 interface NavbarProps { user: User | null }
@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { href: '/soundtrack', label: 'Sounds', icon: Music },
   { href: '/board', label: 'Board', icon: MessageSquare },
   { href: '/chat', label: 'Chat', icon: MessagesSquare },
+  { href: '/polls', label: 'Polls', icon: BarChart3 },
 ]
 
 const MOBILE_MAIN = ['/dashboard', '/albums', '/trips', '/chat']
@@ -147,9 +148,11 @@ export function Navbar({ user }: NavbarProps) {
             </div>
             <div className="space-y-1">
               {[
+                { href: '/members', label: 'The Banglans', icon: Users },
                 { href: '/wall-of-fame', label: 'Wall of Fame', icon: Trophy },
                 { href: '/soundtrack', label: 'Banglan Mixtape', icon: Music },
                 { href: '/board', label: 'The Board', icon: MessageSquare },
+                { href: '/polls', label: 'Polls', icon: BarChart3 },
                 { href: '/year-wall', label: 'Year Wall', icon: Calendar },
                 { href: '/settings', label: 'Settings', icon: Settings },
                 ...(isAdmin ? [{ href: '/invite-members', label: 'Invite Members', icon: Users }] : []),

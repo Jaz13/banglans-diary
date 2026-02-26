@@ -164,3 +164,27 @@ export interface BoardComment {
   content: string;
   created_at: string;
 }
+
+export interface Poll {
+  id: string;
+  question: string;
+  options: string[];
+  is_multiple_choice: boolean;
+  is_closed: boolean;
+  is_pinned: boolean;
+  created_by: string;
+  creator?: User;
+  total_votes: number;
+  option_votes: number[];
+  user_vote: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PollVote {
+  id: string;
+  poll_id: string;
+  user_id: string;
+  option_index: number;
+  created_at: string;
+}

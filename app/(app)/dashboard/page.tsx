@@ -7,6 +7,7 @@ import { PhotoCard } from '@/components/photos/PhotoCard'
 import { PhotoLightbox } from '@/components/photos/PhotoLightbox'
 import { UploadModal } from '@/components/photos/UploadModal'
 import { OnThisDay } from '@/components/photos/OnThisDay'
+import { BirthdayBanner } from '@/components/dashboard/BirthdayBanner'
 import type { Photo, Album } from '@/types'
 
 type FilterType = 'all' | 'photos' | 'videos' | 'liked'
@@ -116,6 +117,9 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Birthday Banner */}
+      <BirthdayBanner />
 
       {/* On This Day */}
       {!loading && currentUserId && (
