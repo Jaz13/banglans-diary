@@ -8,6 +8,11 @@ function getAdmin() {
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+
+  // Get authenticated user
+  const serverSupabase = await createServerClient()
+  const { data: { user } } = await serverSupabase.auth.getUser()
+
   const supabase = getAdmin()
   const { data, error } = await supabase
     .from('albums')
@@ -15,7 +20,28 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
     .eq('id', id)
     .single()
   if (error) return NextResponse.json({ error: error.message }, { status: 404 })
-  return NextResponse.json(data)
+
+  // Get user role
+  let isAdmin = false
+  if (user) {
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    isAdmin = profile?.role === 'admin'
+  }
+
+  // Shape photos with like/comment counts and user_has_liked
+  const photos = (data.photos || []).map((p: any) => ({
+    ...p,
+    likes_count: p.likes?.length ?? 0,
+    user_has_liked: user ? p.likes?.some((l: any) => l.user_id === user.id) : false,
+    comments_count: p.comments?.[0]?.count ?? 0,
+  }))
+
+  return NextResponse.json({
+    album: { ...data, photos: undefined },
+    photos,
+    currentUserId: user?.id ?? '',
+    isAdmin,
+  })
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
