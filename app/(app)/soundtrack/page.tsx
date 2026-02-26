@@ -232,7 +232,7 @@ export default function SoundtrackPage() {
             </h2>
             <div className="flex-1 h-px bg-primary/15 ml-2" />
           </div>
-          <div className="space-y-1.5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
             {signatureSongs.map(song => (
               <SongCard
                 key={song.id}
@@ -259,7 +259,7 @@ export default function SoundtrackPage() {
             </h2>
             <div className="flex-1 h-px bg-border ml-2" />
           </div>
-          <div className="space-y-1.5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
             {regularSongs.map(song => (
               <SongCard
                 key={song.id}

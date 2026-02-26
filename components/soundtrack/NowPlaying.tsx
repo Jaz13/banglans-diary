@@ -91,7 +91,7 @@ export function NowPlaying({ song, onClose, onNext, onPrev, hasNext, hasPrev, on
     <div className="fixed inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       {/* Background artwork blur */}
       {thumbnailUrl && !imgError && (
-        <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <img
             src={thumbnailUrl}
             alt=""
@@ -102,43 +102,40 @@ export function NowPlaying({ song, onClose, onNext, onPrev, hasNext, hasPrev, on
         </div>
       )}
 
-      {/* Content */}
-      <div className="relative flex-1 flex flex-col max-w-2xl w-full mx-auto">
-        {/* Top bar */}
-        <div className="flex items-center justify-between px-4 pt-4 pb-2 safe-area-top">
-          <button
-            onClick={() => setMinimized(true)}
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ChevronDown className="w-5 h-5" />
-            <span className="font-mono text-xs uppercase tracking-widest">Now Playing</span>
-          </button>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+      {/* Top bar — fixed, not scrollable */}
+      <div className="relative z-10 flex items-center justify-between px-4 pt-4 pb-2 safe-area-top max-w-2xl w-full mx-auto">
+        <button
+          onClick={() => setMinimized(true)}
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ChevronDown className="w-5 h-5" />
+          <span className="font-mono text-xs uppercase tracking-widest">Now Playing</span>
+        </button>
+        <button
+          onClick={onClose}
+          className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
 
+      {/* Scrollable content — ensures YouTube player is always reachable */}
+      <div className="relative flex-1 overflow-y-auto max-w-2xl w-full mx-auto">
         {/* Album art + info */}
-        <div className="flex-1 flex flex-col items-center justify-center px-6 gap-6">
-          {/* Album artwork with vinyl effect */}
-          <div className="relative w-full max-w-sm aspect-square">
+        <div className="flex flex-col items-center px-6 py-4 gap-5">
+          {/* Album artwork with vinyl effect — smaller to leave room for video */}
+          <div className="relative w-full max-w-[260px] sm:max-w-xs aspect-square">
             {/* Vinyl record behind artwork */}
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-[95%] h-[95%] rounded-full bg-[#111] shadow-2xl animate-[vinyl-spin_4s_linear_infinite] relative">
-                {/* Vinyl grooves */}
                 <div className="absolute inset-[15%] rounded-full border border-white/5" />
                 <div className="absolute inset-[25%] rounded-full border border-white/5" />
                 <div className="absolute inset-[35%] rounded-full border border-white/5" />
                 <div className="absolute inset-[20%] rounded-full border border-white/[0.03]" />
                 <div className="absolute inset-[30%] rounded-full border border-white/[0.03]" />
-                {/* Center label */}
                 <div className="absolute inset-[38%] rounded-full bg-primary/30 flex items-center justify-center">
                   <div className="w-3 h-3 rounded-full bg-black/60" />
                 </div>
-                {/* Shine */}
                 <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/5 via-transparent to-transparent" />
               </div>
             </div>
@@ -154,7 +151,6 @@ export function NowPlaying({ song, onClose, onNext, onPrev, hasNext, hasPrev, on
               </div>
             )}
 
-            {/* Glow behind artwork */}
             <div className="absolute inset-[10%] rounded-2xl bg-primary/10 blur-2xl -z-10" />
           </div>
 
@@ -179,7 +175,7 @@ export function NowPlaying({ song, onClose, onNext, onPrev, hasNext, hasPrev, on
           </div>
 
           {/* Equalizer visualization */}
-          <div className="flex items-end justify-center gap-[3px] h-8">
+          <div className="flex items-end justify-center gap-[3px] h-6">
             {Array.from({ length: 16 }).map((_, i) => (
               <span
                 key={i}
@@ -209,16 +205,16 @@ export function NowPlaying({ song, onClose, onNext, onPrev, hasNext, hasPrev, on
               <SkipForward className="w-6 h-6" />
             </button>
           </div>
-        </div>
 
-        {/* YouTube player at bottom */}
-        {song.youtube_id && (
-          <div className="px-4 pb-4 pb-safe">
-            <div className="rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10">
-              <YouTubeEmbed videoId={song.youtube_id} title={`${song.title} — ${song.artist}`} onEnded={onEnded} />
+          {/* YouTube player — fully visible with padding */}
+          {song.youtube_id && (
+            <div className="w-full px-0 pb-6">
+              <div className="rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10">
+                <YouTubeEmbed videoId={song.youtube_id} title={`${song.title} — ${song.artist}`} onEnded={onEnded} />
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   )
