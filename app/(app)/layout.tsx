@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Navbar } from '@/components/layout/Navbar'
 import { GlobalUploadModal } from '@/components/layout/GlobalUploadModal'
 import { RockBackground } from '@/components/decorative/RockBackground'
+import { PostAuthSetup } from '@/components/auth/PostAuthSetup'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -17,6 +18,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen">
+      <PostAuthSetup />
       <RockBackground />
       <Navbar user={profile} />
       <main className="lg:pt-16 mobile-nav-spacer">
