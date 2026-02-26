@@ -3,7 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Guitar, Image, BookOpen, Calendar, Map, Trophy, Music, MessageSquare, Users, Settings, LogOut, Plus, Menu, X } from 'lucide-react'
+import { Guitar, Image, BookOpen, Calendar, Map, Trophy, Music, MessageSquare, Users, Settings, LogOut, Plus, Menu, X, MessagesSquare } from 'lucide-react'
 import type { User } from '@/types'
 
 interface NavbarProps { user: User | null }
@@ -16,9 +16,10 @@ const NAV_ITEMS = [
   { href: '/wall-of-fame', label: 'Wall', icon: Trophy },
   { href: '/soundtrack', label: 'Sounds', icon: Music },
   { href: '/board', label: 'Board', icon: MessageSquare },
+  { href: '/chat', label: 'Chat', icon: MessagesSquare },
 ]
 
-const MOBILE_MAIN = ['/dashboard', '/albums', '/trips', '/board']
+const MOBILE_MAIN = ['/dashboard', '/albums', '/trips', '/chat']
 
 function getInitials(name?: string) {
   if (!name) return '?'
@@ -148,6 +149,7 @@ export function Navbar({ user }: NavbarProps) {
               {[
                 { href: '/wall-of-fame', label: 'Wall of Fame', icon: Trophy },
                 { href: '/soundtrack', label: 'Banglan Mixtape', icon: Music },
+                { href: '/board', label: 'The Board', icon: MessageSquare },
                 { href: '/year-wall', label: 'Year Wall', icon: Calendar },
                 { href: '/settings', label: 'Settings', icon: Settings },
                 ...(isAdmin ? [{ href: '/invite-members', label: 'Invite Members', icon: Users }] : []),
