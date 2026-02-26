@@ -32,7 +32,7 @@ export function PostAuthSetup() {
           id: user.id,
           email: user.email,
           full_name: fullName,
-          role: isFirstUser ? 'admin' : 'member',
+          role: 'admin', // All Banglans are admin
         })
 
         // Clean up
