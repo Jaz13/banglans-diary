@@ -5,19 +5,18 @@ import { useParams } from 'next/navigation'
 import { ChevronLeft, MapPin, Calendar, Package, FileText, Plus, Check, Loader2, Pencil, Save } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
-import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/components/providers/AuthProvider'
 import { RsvpButtons } from '@/components/trips/RsvpButtons'
 import { DateVoteCard } from '@/components/trips/DateVoteCard'
 import type { Trip, TripRsvp } from '@/types'
 
 export default function TripDetailPage() {
+  const { user, isAdmin } = useAuth()
   const params = useParams()
   const tripId = params.id as string
 
   const [trip, setTrip] = useState<Trip | null>(null)
   const [loading, setLoading] = useState(true)
-  const [currentUserId, setCurrentUserId] = useState('')
-  const [isAdmin, setIsAdmin] = useState(false)
   const [myRsvp, setMyRsvp] = useState<TripRsvp | null>(null)
   const [newPackingItem, setNewPackingItem] = useState('')
   const [addingItem, setAddingItem] = useState(false)
@@ -27,13 +26,6 @@ export default function TripDetailPage() {
 
   useEffect(() => {
     const load = async () => {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setCurrentUserId(user.id)
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-        if (profile?.role === 'admin') setIsAdmin(true)
-      }
       const res = await fetch(`/api/trips/${tripId}`)
       if (res.ok) {
         const data = await res.json()
@@ -47,10 +39,10 @@ export default function TripDetailPage() {
       setLoading(false)
     }
     load()
-  }, [tripId])
+  }, [tripId, user])
 
   const handleRsvpUpdate = async (status: 'going' | 'maybe' | 'not_going') => {
-    setMyRsvp(prev => prev ? { ...prev, status } : { id: '', trip_id: tripId, user_id: currentUserId, status, created_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    setMyRsvp(prev => prev ? { ...prev, status } : { id: '', trip_id: tripId, user_id: user?.id || '', status, created_at: new Date().toISOString(), updated_at: new Date().toISOString() })
     const res = await fetch(`/api/trips/${tripId}`)
     if (res.ok) { const data = await res.json(); setTrip(data) }
   }
@@ -185,7 +177,7 @@ export default function TripDetailPage() {
           </h2>
           <div className="space-y-3">
             {trip.proposed_dates.map((pd, i) => (
-              <DateVoteCard key={i} proposedDate={pd} dateIndex={i} tripId={tripId} currentUserId={currentUserId} onVote={handleDateVote} />
+              <DateVoteCard key={i} proposedDate={pd} dateIndex={i} tripId={tripId} currentUserId={user?.id || ''} onVote={handleDateVote} />
             ))}
           </div>
         </section>

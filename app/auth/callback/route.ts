@@ -14,12 +14,20 @@ export async function GET(request: Request) {
     // Exchange code for session (PKCE flow)
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
+      // If this was a password recovery flow, redirect to reset-password page
+      if (next === '/reset-password') {
+        return NextResponse.redirect(`${origin}/reset-password`)
+      }
       return NextResponse.redirect(`${origin}${next}`)
     }
   } else if (token_hash && type) {
     // Verify OTP/magic link token
     const { error } = await supabase.auth.verifyOtp({ token_hash, type: type as any })
     if (!error) {
+      // Recovery type → send to reset-password page
+      if (type === 'recovery') {
+        return NextResponse.redirect(`${origin}/reset-password`)
+      }
       return NextResponse.redirect(`${origin}${next}`)
     }
   }

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { MessageSquare, Plus } from 'lucide-react'
 import { PostCard } from '@/components/board/PostCard'
 import { NewPostModal } from '@/components/board/NewPostModal'
-import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/components/providers/AuthProvider'
 import type { BoardPost } from '@/types'
 
 const CATEGORY_FILTERS = [
@@ -17,23 +17,14 @@ const CATEGORY_FILTERS = [
 ]
 
 export default function BoardPage() {
+  const { user, isAdmin } = useAuth()
   const [posts, setPosts] = useState<BoardPost[]>([])
   const [loading, setLoading] = useState(true)
   const [showNew, setShowNew] = useState(false)
   const [filter, setFilter] = useState('all')
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [currentUserId, setCurrentUserId] = useState('')
 
   const load = useCallback(async () => {
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setCurrentUserId(user.id)
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-        if (profile?.role === 'admin') setIsAdmin(true)
-      }
-
       const res = await fetch('/api/board')
       if (res.ok) {
         const data = await res.json()
@@ -158,7 +149,7 @@ export default function BoardPage() {
               <PostCard
                 post={post}
                 isAdmin={isAdmin}
-                currentUserId={currentUserId}
+                currentUserId={user?.id || ''}
                 onPin={handlePin}
                 onDelete={handleDelete}
               />

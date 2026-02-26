@@ -37,7 +37,7 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('push', (event) => {
   const data = event.data?.json() ?? {}
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Banglans Diary', {
+    self.registration.showNotification(data.title || "Banglan's Diary", {
       body: data.body || 'Something happened in the Banglan world 🤘',
       icon: '/icons/icon-192.png',
       badge: '/icons/icon-192.png',

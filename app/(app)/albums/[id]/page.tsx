@@ -9,9 +9,11 @@ import { createClient } from '@/lib/supabase/client'
 import { PhotoCard } from '@/components/photos/PhotoCard'
 import { PhotoLightbox } from '@/components/photos/PhotoLightbox'
 import { UploadModal } from '@/components/photos/UploadModal'
+import { useAuth } from '@/components/providers/AuthProvider'
 import type { Photo, Album } from '@/types'
 
 export default function AlbumDetailPage() {
+  const { user: authUser, isAdmin } = useAuth()
   const params = useParams()
   const albumId = params.id as string
 
@@ -20,8 +22,6 @@ export default function AlbumDetailPage() {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
   const [showUpload, setShowUpload] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [currentUserId, setCurrentUserId] = useState('')
-  const [isAdmin, setIsAdmin] = useState(false)
 
   const loadData = useCallback(async () => {
     try {
@@ -30,35 +30,29 @@ export default function AlbumDetailPage() {
         const data = await res.json()
         if (data.album) setAlbum(data.album)
         if (data.photos) setPhotos(data.photos)
-        if (data.currentUserId) setCurrentUserId(data.currentUserId)
-        if (data.isAdmin) setIsAdmin(data.isAdmin)
         setLoading(false)
         return
       }
     } catch { /* fall through */ }
 
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) setCurrentUserId(user.id)
 
-    const [{ data: albumData }, { data: photosData }, profileResult] = await Promise.all([
+    const [{ data: albumData }, { data: photosData }] = await Promise.all([
       supabase.from('albums').select('*').eq('id', albumId).single(),
       supabase.from('photos').select('*, uploader:profiles(*), likes(user_id), comments(count)').eq('album_id', albumId).order('created_at', { ascending: false }),
-      user ? supabase.from('profiles').select('role').eq('id', user.id).single() : Promise.resolve({ data: null }),
     ])
 
     if (albumData) setAlbum(albumData)
-    if (profileResult.data?.role === 'admin') setIsAdmin(true)
     if (photosData) {
       setPhotos(photosData.map((p: any) => ({
         ...p,
         likes_count: p.likes?.length ?? 0,
-        user_has_liked: user ? p.likes?.some((l: any) => l.user_id === user.id) : false,
+        user_has_liked: authUser ? p.likes?.some((l: any) => l.user_id === authUser.id) : false,
         comments_count: p.comments?.[0]?.count ?? 0,
       })))
     }
     setLoading(false)
-  }, [albumId])
+  }, [albumId, authUser])
 
   useEffect(() => { loadData() }, [loadData])
 
@@ -140,7 +134,7 @@ export default function AlbumDetailPage() {
         <div className="masonry-grid animate-in fade-in duration-300">
           {photos.map((photo, i) => (
             <PhotoCard key={photo.id} photo={photo} onClick={setSelectedPhoto}
-              currentUserId={currentUserId} userRole={isAdmin ? 'admin' : 'member'} index={i} />
+              currentUserId={authUser?.id || ''} userRole={isAdmin ? 'admin' : 'member'} index={i} />
           ))}
         </div>
       )}
@@ -149,7 +143,7 @@ export default function AlbumDetailPage() {
         <PhotoLightbox
           photo={selectedPhoto} photos={photos}
           onClose={() => setSelectedPhoto(null)} onNavigate={setSelectedPhoto}
-          currentUserId={currentUserId} userRole={isAdmin ? 'admin' : 'member'}
+          currentUserId={authUser?.id || ''} userRole={isAdmin ? 'admin' : 'member'}
         />
       )}
 

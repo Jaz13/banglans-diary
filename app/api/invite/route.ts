@@ -48,19 +48,19 @@ export async function POST(request: NextRequest) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY)
       await resend.emails.send({
-        from: 'Banglans Diary <noreply@resend.dev>',
+        from: "Banglan's Diary <noreply@resend.dev>",
         to: email.trim(),
-        subject: `${profile.full_name} invited you to Banglans Diary 🎸`,
+        subject: `${profile.full_name} invited you to Banglan's Diary 🎸`,
         html: `
           <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#0C0D11;color:#EBEBEB;border-radius:12px;overflow:hidden;">
             <div style="background:linear-gradient(135deg,#1B1C22,#0C0D11);padding:32px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.08);">
-              <h1 style="font-size:28px;margin:0;color:#D4882A;letter-spacing:2px;">🎸 BANGLANS DIARY</h1>
+              <h1 style="font-size:28px;margin:0;color:#D4882A;letter-spacing:2px;">🎸 BANGLAN'S DIARY</h1>
               <p style="color:rgba(235,235,235,0.5);font-size:13px;margin:8px 0 0;">Class of 92 — Calicut Medical College</p>
             </div>
             <div style="padding:32px;">
               <p style="font-size:16px;margin:0 0 16px;">Hey legend 👋</p>
               <p style="color:rgba(235,235,235,0.7);line-height:1.6;margin:0 0 24px;">
-                <strong style="color:#D4882A;">${profile.full_name}</strong> has invited you to join the Banglans Diary — the private chronicles of the greatest batch to ever walk through Calicut Medical College.
+                <strong style="color:#D4882A;">${profile.full_name}</strong> has invited you to join Banglan's Diary — the private chronicles of the greatest batch to ever walk through Calicut Medical College.
               </p>
               <p style="color:rgba(235,235,235,0.7);line-height:1.6;margin:0 0 24px;">
                 You're joining as a <strong style="color:${assignedRole === 'admin' ? '#D4882A' : '#3FA06B'}">${assignedRole}</strong>. Photos, memories, trip plans, the Wall of Fame — it's all waiting.

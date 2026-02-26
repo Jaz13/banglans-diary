@@ -52,7 +52,7 @@ export function Navbar({ user }: NavbarProps) {
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center gap-2 flex-shrink-0">
             <Guitar className="w-5 h-5 text-primary" />
-            <span className="font-rock text-xl neon-flicker">BANGLANS DIARY</span>
+            <span className="font-rock text-xl neon-flicker">BANGLAN'S DIARY</span>
           </Link>
 
           {/* Nav links */}

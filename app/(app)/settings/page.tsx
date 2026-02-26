@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { User, Save, CheckCheck, Loader2, MapPin, Stethoscope, Tag } from 'lucide-react'
+import { User, Save, CheckCheck, Loader2, MapPin, Stethoscope, Tag, KeyRound, Eye, EyeOff } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 interface Profile {
   id: string
@@ -255,6 +256,117 @@ export default function SettingsPage() {
           </button>
         </form>
       </div>
+
+      {/* Change Password card */}
+      <ChangePasswordCard />
+    </div>
+  )
+}
+
+function ChangePasswordCard() {
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPass, setShowPass] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setSaved(false)
+
+    if (newPassword.length < 6) {
+      setError('Password must be at least 6 characters')
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
+
+    setSaving(true)
+    const supabase = createClient()
+    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword })
+
+    if (updateError) {
+      setError(updateError.message)
+      setSaving(false)
+      return
+    }
+
+    setSaved(true)
+    setNewPassword('')
+    setConfirmPassword('')
+    setSaving(false)
+    setTimeout(() => setSaved(false), 3000)
+  }
+
+  return (
+    <div className="bg-card rounded-2xl border border-border shadow-sm p-6">
+      <div className="flex items-center gap-2 mb-5">
+        <KeyRound className="w-5 h-5 text-primary" />
+        <h2 className="text-lg font-bold text-foreground tracking-wider uppercase" style={{ fontFamily: 'var(--font-rock)' }}>
+          Change Password
+        </h2>
+      </div>
+
+      <form onSubmit={handleChangePassword} className="space-y-4">
+        <div>
+          <label className="text-sm font-medium text-foreground block mb-1.5">New Password</label>
+          <div className="relative">
+            <input
+              type={showPass ? 'text' : 'password'}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Min. 6 characters"
+              required
+              minLength={6}
+              className="w-full bg-secondary border border-border rounded-xl px-4 py-3 pr-12 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 transition"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPass(!showPass)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-foreground block mb-1.5">Confirm New Password</label>
+          <input
+            type={showPass ? 'text' : 'password'}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Re-enter new password"
+            required
+            className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 transition"
+          />
+        </div>
+
+        {error && (
+          <div className="bg-destructive/10 text-destructive text-sm rounded-xl px-4 py-3">
+            {error}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={saving || !newPassword || !confirmPassword}
+          className="flex items-center justify-center gap-2 bg-primary text-primary-foreground rounded-full px-6 py-3 text-sm font-bold uppercase tracking-widest hover:bg-primary/90 disabled:opacity-50 transition-colors"
+          style={{ fontFamily: 'var(--font-rock)' }}
+        >
+          {saving ? (
+            <><Loader2 className="w-4 h-4 animate-spin" /> Updating...</>
+          ) : saved ? (
+            <><CheckCheck className="w-4 h-4" /> Updated!</>
+          ) : (
+            <><KeyRound className="w-4 h-4" /> Update Password</>
+          )}
+        </button>
+      </form>
     </div>
   )
 }

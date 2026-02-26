@@ -19,6 +19,8 @@ function LoginForm() {
   const [error, setError] = useState('')
   const [magicLinkSent, setMagicLinkSent] = useState(false)
   const [showPasswordLogin, setShowPasswordLogin] = useState(false)
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const [resetEmailSent, setResetEmailSent] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const quote = ROCK_QUOTES[Math.floor(Math.random() * ROCK_QUOTES.length)]
@@ -65,6 +67,109 @@ function LoginForm() {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) { setError(error.message); setLoading(false); return }
     router.push('/dashboard')
+  }
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!email.trim()) { setError('Enter your email first'); return }
+    setLoading(true)
+    setError('')
+    const supabase = createClient()
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${getRedirectUrl().replace('/auth/callback', '')}/auth/callback?next=/reset-password`,
+    })
+    if (error) { setError(error.message); setLoading(false); return }
+    setResetEmailSent(true)
+    setLoading(false)
+  }
+
+  // Reset email sent — show confirmation
+  if (resetEmailSent) {
+    return (
+      <div className="w-full max-w-md mx-auto px-4">
+        <div className="rock-card rounded-2xl overflow-hidden">
+          <div className="px-8 py-12 text-center">
+            <div className="w-16 h-16 rounded-full bg-primary/15 flex items-center justify-center mx-auto mb-5">
+              <CheckCircle2 className="w-8 h-8 text-primary" />
+            </div>
+            <h2
+              className="text-2xl font-bold text-primary mb-2 tracking-wider"
+              style={{ fontFamily: 'var(--font-rock)' }}
+            >
+              CHECK YOUR EMAIL
+            </h2>
+            <p className="text-muted-foreground text-sm mb-2">
+              We sent a password reset link to
+            </p>
+            <p className="text-foreground font-semibold text-sm mb-6 font-mono">{email}</p>
+            <p className="text-muted-foreground text-xs leading-relaxed mb-8">
+              Click the link in the email to reset your password.<br />
+              Check spam if you don&apos;t see it.
+            </p>
+            <button
+              onClick={() => { setResetEmailSent(false); setShowForgotPassword(false); setShowPasswordLogin(true) }}
+              className="w-full py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+            >
+              Back to login
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Forgot password form
+  if (showForgotPassword) {
+    return (
+      <div className="w-full max-w-md mx-auto px-4">
+        <div className="rock-card rounded-2xl overflow-hidden">
+          <div className="px-8 pt-10 pb-6 text-center border-b border-border">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Guitar className="w-7 h-7 text-primary" />
+              <span className="font-rock text-3xl neon-flicker">BANGLAN&apos;S DIARY</span>
+            </div>
+          </div>
+          <div className="px-8 py-8">
+            <h2 className="text-lg font-semibold text-foreground mb-2">Forgot your password?</h2>
+            <p className="text-sm text-muted-foreground mb-6">
+              Enter your email and we&apos;ll send you a link to reset it.
+            </p>
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  required
+                  className="w-full bg-secondary border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all"
+                />
+              </div>
+              {error && (
+                <div className="bg-destructive/10 border border-destructive/30 rounded-xl px-4 py-3">
+                  <p className="text-sm text-destructive">{error}</p>
+                </div>
+              )}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 disabled:opacity-50 transition-all amber-glow flex items-center justify-center gap-2"
+              >
+                {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</> : 'Send Reset Link'}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowForgotPassword(false); setError('') }}
+                className="w-full text-center text-xs text-muted-foreground hover:text-primary transition-colors py-1"
+              >
+                Back to login
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   // Magic link sent — show confirmation
@@ -117,7 +222,7 @@ function LoginForm() {
         <div className="px-8 pt-10 pb-6 text-center border-b border-border">
           <div className="flex items-center justify-center gap-2 mb-4">
             <Guitar className="w-7 h-7 text-primary" />
-            <span className="font-rock text-3xl neon-flicker">BANGLANS DIARY</span>
+            <span className="font-rock text-3xl neon-flicker">BANGLAN'S DIARY</span>
           </div>
           <p className="text-xs text-muted-foreground italic">Class of 92 · Calicut Medical College</p>
           <div className="mt-4 px-4 py-3 rounded-xl bg-secondary/50 border border-border">
@@ -185,7 +290,16 @@ function LoginForm() {
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">Password</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Password</label>
+                  <button
+                    type="button"
+                    onClick={() => { setShowForgotPassword(true); setError('') }}
+                    className="text-xs text-primary hover:underline"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
                 <input
                   type="password"
                   value={password}

@@ -5,9 +5,11 @@ import { Plus, FolderOpen } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { AlbumCard } from '@/components/albums/AlbumCard'
 import { EmojiPicker } from '@/components/ui/EmojiPicker'
+import { useAuth } from '@/components/providers/AuthProvider'
 import type { Album } from '@/types'
 
 export default function AlbumsPage() {
+  const { isAdmin } = useAuth()
   const [albums, setAlbums] = useState<Album[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
@@ -15,16 +17,9 @@ export default function AlbumsPage() {
   const [newDesc, setNewDesc] = useState('')
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState('')
-  const [userRole, setUserRole] = useState('')
 
   const loadAlbums = useCallback(async () => {
     try {
-      const supabase = createClient()
-      const { data: { user: authUser } } = await supabase.auth.getUser()
-      if (authUser) {
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', authUser.id).single()
-        if (profile) setUserRole(profile.role)
-      }
       const res = await fetch('/api/albums')
       if (res.ok) {
         const data = await res.json()
@@ -32,8 +27,8 @@ export default function AlbumsPage() {
         setLoading(false)
         return
       }
-      const supabase2 = createClient()
-      const { data } = await supabase2
+      const supabase = createClient()
+      const { data } = await supabase
         .from('albums')
         .select('*, photos(id, thumbnail_url, cloudinary_url, taken_at, created_at)')
         .order('updated_at', { ascending: false })
@@ -92,7 +87,7 @@ export default function AlbumsPage() {
           <div className="rock-divider mb-2" />
           <p className="text-muted-foreground">Every era, every trip, every legend</p>
         </div>
-        {userRole === 'admin' && (
+        {isAdmin && (
           <button
             onClick={() => setShowCreate(true)}
             className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-full font-bold text-sm hover:bg-primary/90 transition-colors font-rock tracking-widest"
@@ -103,7 +98,7 @@ export default function AlbumsPage() {
         )}
       </div>
 
-      {showCreate && userRole === 'admin' && (
+      {showCreate && isAdmin && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="w-full max-w-md bg-card rounded-3xl shadow-2xl overflow-hidden border border-border animate-in zoom-in-95 slide-in-from-bottom-2 duration-250 ease-out">
             <div className="px-6 pt-6 pb-4 border-b border-border">
@@ -169,9 +164,9 @@ export default function AlbumsPage() {
           </div>
           <h2 className="text-xl font-bold text-foreground mb-2 font-rock tracking-wide">NO ALBUMS YET</h2>
           <p className="text-muted-foreground mb-6">
-            {userRole === 'admin' ? 'Create albums to organise the Banglan archive' : 'No albums have been created yet'}
+            {isAdmin ? 'Create albums to organise the Banglan archive' : 'No albums have been created yet'}
           </p>
-          {userRole === 'admin' && (
+          {isAdmin && (
             <button onClick={() => setShowCreate(true)}
               className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-full font-bold hover:bg-primary/90 transition-colors font-rock tracking-widest">
               <Plus className="w-4 h-4" />

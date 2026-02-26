@@ -4,25 +4,17 @@ import { useState, useEffect, useCallback } from 'react'
 import { BarChart3, Plus } from 'lucide-react'
 import { CreatePollModal } from '@/components/polls/CreatePollModal'
 import { PollCard } from '@/components/polls/PollCard'
-import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/components/providers/AuthProvider'
 import type { Poll } from '@/types'
 
 export default function PollsPage() {
+  const { user, isAdmin } = useAuth()
   const [polls, setPolls] = useState<Poll[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [currentUserId, setCurrentUserId] = useState('')
 
   const load = useCallback(async () => {
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setCurrentUserId(user.id)
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-        if (profile?.role === 'admin') setIsAdmin(true)
-      }
       const res = await fetch('/api/polls')
       if (res.ok) {
         const data = await res.json()
@@ -158,7 +150,7 @@ export default function PollsPage() {
               key={poll.id}
               poll={poll}
               isAdmin={isAdmin}
-              currentUserId={currentUserId}
+              currentUserId={user?.id || ''}
               onVote={handleVote}
               onDelete={handleDelete}
               onPin={handlePin}

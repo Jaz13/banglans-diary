@@ -2,15 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { Plus, Plane } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/components/providers/AuthProvider'
 import { TripCard } from '@/components/trips/TripCard'
 import type { Trip } from '@/types'
 
 export default function TripsPage() {
+  const { user, isAdmin } = useAuth()
   const [trips, setTrips] = useState<Trip[]>([])
   const [loading, setLoading] = useState(true)
-  const [currentUserId, setCurrentUserId] = useState('')
-  const [isAdmin, setIsAdmin] = useState(false)
   const [showCreate, setShowCreate] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newDest, setNewDest] = useState('')
@@ -19,13 +18,6 @@ export default function TripsPage() {
 
   useEffect(() => {
     const load = async () => {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setCurrentUserId(user.id)
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-        if (profile?.role === 'admin') setIsAdmin(true)
-      }
       const res = await fetch('/api/trips')
       if (res.ok) {
         const data = await res.json()
@@ -149,7 +141,7 @@ export default function TripsPage() {
             {activeTrips.map((trip, i) => (
               <div key={trip.id} className="animate-in fade-in slide-in-from-bottom-3 duration-400"
                 style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}>
-                <TripCard trip={trip} currentUserId={currentUserId} />
+                <TripCard trip={trip} currentUserId={user?.id || ''} />
               </div>
             ))}
           </div>
@@ -161,7 +153,7 @@ export default function TripsPage() {
           <h2 className="text-lg font-bold text-muted-foreground mb-4 font-rock tracking-wide">PAST TRIPS</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 opacity-60">
             {pastTrips.map((trip) => (
-              <TripCard key={trip.id} trip={trip} currentUserId={currentUserId} />
+              <TripCard key={trip.id} trip={trip} currentUserId={user?.id || ''} />
             ))}
           </div>
         </>

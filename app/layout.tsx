@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Banglans Diary',
+  title: "Banglan's Diary",
   description: 'The legendary chronicles of the Banglans — Class of 92, Calicut Medical College',
   manifest: '/manifest.json',
   appleWebApp: {

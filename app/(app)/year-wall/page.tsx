@@ -3,16 +3,16 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { PhotoLightbox } from '@/components/photos/PhotoLightbox'
+import { useAuth } from '@/components/providers/AuthProvider'
 import type { Photo } from '@/types'
 import { format, startOfYear, endOfYear, eachDayOfInterval, isToday, isFuture } from 'date-fns'
 
 export default function YearWallPage() {
+  const { user: authUser, isAdmin } = useAuth()
   const [photos, setPhotos] = useState<Photo[]>([])
   const [photosByDay, setPhotosByDay] = useState<Map<string, Photo[]>>(new Map())
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
   const [selectedPhotos, setSelectedPhotos] = useState<Photo[]>([])
-  const [currentUserId, setCurrentUserId] = useState('')
-  const [userRole, setUserRole] = useState('')
   const [loading, setLoading] = useState(true)
   const [year, setYear] = useState(new Date().getFullYear())
   const [hoveredDay, setHoveredDay] = useState<string | null>(null)
@@ -21,12 +21,6 @@ export default function YearWallPage() {
     const load = async () => {
       setLoading(true)
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setCurrentUserId(user.id)
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-        if (profile) setUserRole(profile.role)
-      }
       const { data } = await supabase
         .from('photos')
         .select('*, uploader:profiles(*), likes(user_id), comments(count)')
@@ -35,7 +29,7 @@ export default function YearWallPage() {
       const enriched: Photo[] = data.map((p: any) => ({
         ...p,
         likes_count: p.likes?.length ?? 0,
-        user_has_liked: user ? p.likes?.some((l: any) => l.user_id === user.id) : false,
+        user_has_liked: authUser ? p.likes?.some((l: any) => l.user_id === authUser.id) : false,
         comments_count: p.comments?.[0]?.count ?? 0,
       }))
       setPhotos(enriched)
@@ -50,7 +44,7 @@ export default function YearWallPage() {
       setLoading(false)
     }
     load()
-  }, [year])
+  }, [year, authUser])
 
   const days = eachDayOfInterval({
     start: startOfYear(new Date(year, 0, 1)),
@@ -222,7 +216,7 @@ export default function YearWallPage() {
           photo={selectedPhoto} photos={selectedPhotos}
           onClose={() => { setSelectedPhoto(null); setSelectedPhotos([]) }}
           onNavigate={setSelectedPhoto}
-          currentUserId={currentUserId} userRole={userRole}
+          currentUserId={authUser?.id || ''} userRole={isAdmin ? 'admin' : 'member'}
         />
       )}
     </div>

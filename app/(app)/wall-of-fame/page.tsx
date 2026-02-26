@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Trophy, Plus, Flame } from 'lucide-react'
 import { FameCard } from '@/components/wall-of-fame/FameCard'
 import { NominateModal } from '@/components/wall-of-fame/NominateModal'
-import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/components/providers/AuthProvider'
 import type { WallEntry } from '@/types'
 
 const CATEGORIES = [
@@ -18,23 +18,14 @@ const CATEGORIES = [
 ]
 
 export default function WallOfFamePage() {
+  const { user, isAdmin } = useAuth()
   const [entries, setEntries] = useState<WallEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [showNominate, setShowNominate] = useState(false)
   const [filter, setFilter] = useState('all')
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [currentUserId, setCurrentUserId] = useState('')
 
   const load = useCallback(async () => {
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setCurrentUserId(user.id)
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-        if (profile?.role === 'admin') setIsAdmin(true)
-      }
-
       const res = await fetch('/api/wall-of-fame')
       if (res.ok) {
         const data = await res.json()
@@ -166,7 +157,7 @@ export default function WallOfFamePage() {
               <FameCard
                 entry={entry}
                 isAdmin={isAdmin}
-                currentUserId={currentUserId}
+                currentUserId={user?.id || ''}
                 onVote={handleVote}
                 onPin={handlePin}
                 onDelete={handleDelete}

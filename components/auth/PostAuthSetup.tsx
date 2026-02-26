@@ -1,75 +1,76 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/components/providers/AuthProvider'
 
 /**
- * Runs after magic link auth to:
+ * Runs ONCE after magic link auth to:
  * 1. Create profile if it doesn't exist
  * 2. Accept invite token if stored in localStorage
- * 3. Set admin role for first user
+ *
+ * Uses AuthProvider to check if profile exists — avoids redundant DB queries.
+ * Only fires when localStorage has pending setup data (invite token / name).
  */
 export function PostAuthSetup() {
+  const { user } = useAuth()
+  const hasRun = useRef(false)
+
   useEffect(() => {
+    // Only run once per mount, and only if there's pending setup data
+    if (hasRun.current) return
+    const inviteToken = localStorage.getItem('banglan_invite_token')
+    const storedName = localStorage.getItem('banglan_full_name')
+
+    // Nothing to do — skip all DB queries
+    if (!inviteToken && !storedName) return
+
+    hasRun.current = true
+
     const setup = async () => {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
 
-      // Check if profile already exists
-      const { data: existing } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', user.id)
-        .single()
-
-      if (!existing) {
-        // Profile doesn't exist — create it
-        const fullName = localStorage.getItem('banglan_full_name') || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Banglan'
-        const isFirstUser = localStorage.getItem('banglan_is_first_user') === 'true'
+      // Profile doesn't exist yet (user is null from AuthProvider) — create it
+      if (!user && storedName) {
+        const { data: { user: authUser } } = await supabase.auth.getUser()
+        if (!authUser) return
 
         await supabase.from('profiles').insert({
-          id: user.id,
-          email: user.email,
-          full_name: fullName,
-          role: 'admin', // All Banglans are admin
+          id: authUser.id,
+          email: authUser.email,
+          full_name: storedName,
+          role: 'admin',
         })
-
-        // Clean up
+        localStorage.removeItem('banglan_full_name')
         localStorage.removeItem('banglan_is_first_user')
       }
 
       // Handle invite token acceptance
-      const inviteToken = localStorage.getItem('banglan_invite_token')
       if (inviteToken) {
-        try {
-          await fetch('/api/invite/accept', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: inviteToken, userId: user.id }),
-          })
-        } catch { /* silent — invite may already be accepted */ }
+        const userId = user?.id
+        if (userId) {
+          try {
+            await fetch('/api/invite/accept', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token: inviteToken, userId }),
+            })
+          } catch { /* silent */ }
+        }
         localStorage.removeItem('banglan_invite_token')
       }
 
-      // Update full_name if it was stored and profile already existed
-      const storedName = localStorage.getItem('banglan_full_name')
-      if (storedName && existing) {
-        // Only update if current name is missing
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('full_name')
-          .eq('id', user.id)
-          .single()
-        if (profile && !profile.full_name) {
-          await supabase.from('profiles').update({ full_name: storedName }).eq('id', user.id)
-        }
+      // Update full_name if stored and profile exists but name is missing
+      if (storedName && user && !user.full_name) {
+        await supabase.from('profiles').update({ full_name: storedName }).eq('id', user.id)
+        localStorage.removeItem('banglan_full_name')
+      } else {
+        localStorage.removeItem('banglan_full_name')
       }
-      localStorage.removeItem('banglan_full_name')
     }
 
     setup()
-  }, [])
+  }, [user])
 
   return null
 }

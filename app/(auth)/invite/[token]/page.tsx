@@ -71,7 +71,7 @@ export default function InviteLandingPage() {
         <div className="px-8 pt-10 pb-6 text-center border-b border-border">
           <div className="flex items-center justify-center gap-2 mb-3">
             <Guitar className="w-7 h-7 text-primary" />
-            <span className="font-rock text-3xl neon-flicker">BANGLANS DIARY</span>
+            <span className="font-rock text-3xl neon-flicker">BANGLAN&apos;S DIARY</span>
           </div>
           <p className="text-xs text-muted-foreground">Class of 92 · Calicut Medical College</p>
         </div>

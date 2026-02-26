@@ -8,6 +8,7 @@ import { PhotoLightbox } from '@/components/photos/PhotoLightbox'
 import { UploadModal } from '@/components/photos/UploadModal'
 import { OnThisDay } from '@/components/photos/OnThisDay'
 import { BirthdayBanner } from '@/components/dashboard/BirthdayBanner'
+import { useAuth } from '@/components/providers/AuthProvider'
 import type { Photo, Album } from '@/types'
 
 type FilterType = 'all' | 'photos' | 'videos' | 'liked'
@@ -20,25 +21,18 @@ const FILTERS: { key: FilterType; label: string }[] = [
 ]
 
 export default function DashboardPage() {
+  const { user: authUser, isAdmin } = useAuth()
   const [photos, setPhotos] = useState<Photo[]>([])
   const [albums, setAlbums] = useState<Album[]>([])
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
   const [selectedPhotos, setSelectedPhotos] = useState<Photo[]>([])
   const [showUpload, setShowUpload] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [currentUserId, setCurrentUserId] = useState('')
-  const [userRole, setUserRole] = useState('')
   const [activeFilter, setActiveFilter] = useState<FilterType>('all')
 
   const loadData = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      setCurrentUserId(user.id)
-      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-      if (profile) setUserRole(profile.role)
-    }
 
     const [photosResult, albumsResult] = await Promise.all([
       supabase
@@ -53,7 +47,7 @@ export default function DashboardPage() {
       const enriched = photosResult.data.map((p: any) => ({
         ...p,
         likes_count: p.likes?.length ?? 0,
-        user_has_liked: user ? p.likes?.some((l: any) => l.user_id === user.id) : false,
+        user_has_liked: authUser ? p.likes?.some((l: any) => l.user_id === authUser.id) : false,
         comments_count: p.comments?.[0]?.count ?? 0,
       }))
       setPhotos(enriched)
@@ -62,7 +56,7 @@ export default function DashboardPage() {
       setAlbums(albumsResult.map((a: any) => ({ ...a, photo_count: a.photo_count ?? 0 })))
     }
     setLoading(false)
-  }, [])
+  }, [authUser])
 
   useEffect(() => { loadData() }, [loadData])
 
@@ -93,7 +87,7 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-1 font-rock tracking-wide neon-flicker">
-              BANGLANS DIARY{' '}
+              BANGLAN&apos;S DIARY{' '}
               <span className="inline-block text-2xl" style={{ animation: 'reel-spin 8s linear infinite' }}>🎸</span>
             </h1>
             <div className="rock-divider mb-2" />
@@ -106,7 +100,7 @@ export default function DashboardPage() {
               &ldquo;Rock and roll never forgets.&rdquo; — Bob Seger
             </p>
           </div>
-          {userRole === 'admin' && (
+          {isAdmin && (
             <button
               onClick={() => setShowUpload(true)}
               className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-full font-bold text-sm hover:bg-primary/90 transition-colors shadow-[0_0_16px_oklch(0.75_0.17_68/0.3)] font-rock tracking-widest"
@@ -122,8 +116,8 @@ export default function DashboardPage() {
       <BirthdayBanner />
 
       {/* On This Day */}
-      {!loading && currentUserId && (
-        <OnThisDay onPhotoClick={openPhoto} currentUserId={currentUserId} />
+      {!loading && authUser?.id && (
+        <OnThisDay onPhotoClick={openPhoto} currentUserId={authUser?.id || ''} />
       )}
 
       {/* Rock divider before filters */}
@@ -182,7 +176,7 @@ export default function DashboardPage() {
           <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
             Upload the first photo to start building the legendary Banglan archive.
           </p>
-          {userRole === 'admin' && (
+          {isAdmin && (
             <button
               onClick={() => setShowUpload(true)}
               className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-full font-bold hover:bg-primary/90 transition-colors font-rock tracking-widest"
@@ -218,8 +212,8 @@ export default function DashboardPage() {
               key={photo.id}
               photo={photo}
               onClick={(p) => openPhoto(p, filteredPhotos)}
-              currentUserId={currentUserId}
-              userRole={userRole}
+              currentUserId={authUser?.id || ''}
+              userRole={isAdmin ? 'admin' : 'member'}
               index={i}
             />
           ))}
@@ -233,13 +227,13 @@ export default function DashboardPage() {
           photos={selectedPhotos}
           onClose={() => { setSelectedPhoto(null); setSelectedPhotos([]) }}
           onNavigate={setSelectedPhoto}
-          currentUserId={currentUserId}
-          userRole={userRole}
+          currentUserId={authUser?.id || ''}
+          userRole={isAdmin ? 'admin' : 'member'}
         />
       )}
 
       {/* Upload modal */}
-      {showUpload && userRole === 'admin' && (
+      {showUpload && isAdmin && (
         <UploadModal
           albums={albums}
           onClose={() => setShowUpload(false)}

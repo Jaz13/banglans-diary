@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Users, Copy, CheckCheck, Clock, UserCheck, MessageCircle, Share2, Link, RefreshCw, AlertCircle, Trash2, X, Shield, Eye, Lock } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
-import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/components/providers/AuthProvider'
 import type { Invite } from '@/types'
 
 interface FamilyMember {
@@ -17,6 +17,7 @@ interface FamilyMember {
 }
 
 export default function InviteMembersPage() {
+  const { isAdmin } = useAuth()
   const [email, setEmail] = useState('')
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
@@ -30,7 +31,6 @@ export default function InviteMembersPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [clearingExpired, setClearingExpired] = useState(false)
   const [inviteRole, setInviteRole] = useState<'admin' | 'member'>('member')
-  const [userRole, setUserRole] = useState<string | null>(null)
 
   const loadData = useCallback(async () => {
     try {
@@ -47,20 +47,11 @@ export default function InviteMembersPage() {
   }, [])
 
   useEffect(() => {
-    // Check role quickly, then load data in parallel
-    const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        supabase.from('profiles').select('role').eq('id', user.id).single().then(({ data: profile }) => {
-          setUserRole(profile?.role || 'member')
-        })
-      }
-    })
     loadData()
   }, [loadData])
 
   // Role gate — only admins can access this page
-  if (userRole !== null && userRole !== 'admin') {
+  if (!isAdmin) {
     return (
       <div className="max-w-2xl">
         <div className="text-center py-20 animate-in fade-in duration-300">
@@ -137,14 +128,14 @@ export default function InviteMembersPage() {
   }
 
   const shareWhatsApp = (link: string) => {
-    const msg = encodeURIComponent(`You're invited to The Banglans Diary — our private legends-only space!\n\nJoin here: ${link}`)
+    const msg = encodeURIComponent(`You're invited to Banglan's Diary — our private legends-only space!\n\nJoin here: ${link}`)
     window.open(`https://wa.me/?text=${msg}`, '_blank')
   }
 
   const shareNative = async (link: string) => {
     if (navigator.share) {
       await navigator.share({
-        title: 'Join The Banglans Diary',
+        title: "Join Banglan's Diary",
         text: "You're invited to the Banglan inner circle!",
         url: link,
       })

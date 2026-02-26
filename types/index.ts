@@ -141,6 +141,34 @@ export interface SoundtrackSong {
   is_signature: boolean;
   genre?: string;
   created_at: string;
+  active_challenge?: SignatureChallenge | null;
+}
+
+export interface SignatureChallenge {
+  id: string;
+  song_id: string;
+  challenger_id: string;
+  challenger?: User;
+  challenge_type: 'add' | 'remove';
+  status: 'active' | 'resolved' | 'expired';
+  result: 'approved' | 'rejected' | null;
+  total_admins: number;
+  created_at: string;
+  resolved_at?: string;
+  expires_at: string;
+  agree_count: number;
+  disagree_count: number;
+  total_votes: number;
+  threshold: number;
+  current_user_vote?: boolean | null;
+}
+
+export interface SignatureChallengeVote {
+  id: string;
+  challenge_id: string;
+  user_id: string;
+  vote: boolean;
+  created_at: string;
 }
 
 export interface BoardPost {
