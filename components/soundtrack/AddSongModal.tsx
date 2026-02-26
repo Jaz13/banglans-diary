@@ -15,6 +15,7 @@ export function AddSongModal({ onClose, onAdded }: AddSongModalProps) {
   const [year, setYear] = useState('')
   const [youtubeId, setYoutubeId] = useState('')
   const [note, setNote] = useState('')
+  const [isSignature, setIsSignature] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -41,6 +42,7 @@ export function AddSongModal({ onClose, onAdded }: AddSongModalProps) {
           year: year ? parseInt(year) : null,
           youtube_id: youtubeId ? extractYouTubeId(youtubeId) : null,
           note: note.trim() || null,
+          is_signature: isSignature,
         }),
       })
 
@@ -130,6 +132,28 @@ export function AddSongModal({ onClose, onAdded }: AddSongModalProps) {
               />
             </div>
           </div>
+
+          {/* Signature toggle */}
+          <button
+            type="button"
+            onClick={() => setIsSignature(v => !v)}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${
+              isSignature
+                ? 'bg-primary/10 border-primary/40 text-primary'
+                : 'bg-secondary border-border text-muted-foreground hover:border-primary/30'
+            }`}
+          >
+            <span className="text-lg">{isSignature ? '⭐' : '☆'}</span>
+            <div className="text-left">
+              <p className="text-sm font-medium">Mark as Signature Track</p>
+              <p className="text-xs opacity-70">Pinned at top — the definitive Banglan anthems</p>
+            </div>
+            <div className={`ml-auto w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+              isSignature ? 'border-primary bg-primary' : 'border-muted-foreground'
+            }`}>
+              {isSignature && <div className="w-2 h-2 rounded-full bg-white" />}
+            </div>
+          </button>
 
           {error && (
             <div className="bg-destructive/10 text-destructive text-sm rounded-xl px-4 py-3">
