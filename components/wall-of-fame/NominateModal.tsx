@@ -18,7 +18,7 @@ const CATEGORIES = [
 ]
 
 const ERAS = [
-  '1993–99 Hostel Era',
+  '1988–92 Hostel Era',
   'Post-2000 Specialist Era',
   'Group Trip Era',
   'Present Day',

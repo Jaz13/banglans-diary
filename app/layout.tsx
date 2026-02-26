@@ -20,7 +20,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'Banglans Diary',
-  description: 'The legendary chronicles of the Banglans — Class of 99, Calicut Medical College',
+  description: 'The legendary chronicles of the Banglans — Class of 92, Calicut Medical College',
 }
 
 export default function RootLayout({

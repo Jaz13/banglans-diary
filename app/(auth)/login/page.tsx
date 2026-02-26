@@ -39,7 +39,7 @@ export default function LoginPage() {
             <Guitar className="w-7 h-7 text-primary" />
             <span className="font-rock text-3xl neon-flicker">BANGLANS DIARY</span>
           </div>
-          <p className="text-xs text-muted-foreground italic">Class of 99 · Calicut Medical College</p>
+          <p className="text-xs text-muted-foreground italic">Class of 92 · Calicut Medical College</p>
           <div className="mt-4 px-4 py-3 rounded-xl bg-secondary/50 border border-border">
             <p className="text-xs text-muted-foreground italic leading-relaxed">{quote}</p>
           </div>

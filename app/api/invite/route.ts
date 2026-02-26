@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
           <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;background:#0C0D11;color:#EBEBEB;border-radius:12px;overflow:hidden;">
             <div style="background:linear-gradient(135deg,#1B1C22,#0C0D11);padding:32px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.08);">
               <h1 style="font-size:28px;margin:0;color:#D4882A;letter-spacing:2px;">🎸 BANGLANS DIARY</h1>
-              <p style="color:rgba(235,235,235,0.5);font-size:13px;margin:8px 0 0;">Class of 99 — Calicut Medical College</p>
+              <p style="color:rgba(235,235,235,0.5);font-size:13px;margin:8px 0 0;">Class of 92 — Calicut Medical College</p>
             </div>
             <div style="padding:32px;">
               <p style="font-size:16px;margin:0 0 16px;">Hey legend 👋</p>
