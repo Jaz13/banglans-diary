@@ -11,6 +11,8 @@ export default function InviteLandingPage() {
   const [status, setStatus] = useState<'loading' | 'valid' | 'invalid'>('loading')
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviterName, setInviterName] = useState('')
+  const [inviteRole, setInviteRole] = useState('member')
+  const [isGenericLink, setIsGenericLink] = useState(false)
 
   useEffect(() => {
     if (!token) return
@@ -22,8 +24,12 @@ export default function InviteLandingPage() {
       .then(r => r.json())
       .then(data => {
         if (data.valid) {
-          setInviteEmail(data.email)
+          setInviteEmail(data.email || '')
           setInviterName(data.inviter_name || 'A Banglan')
+          setInviteRole(data.role || 'member')
+          // Detect placeholder/generic invite emails
+          const isPlaceholder = !data.email || data.email.includes('@banglans-diary.app') || data.email.startsWith('invite-')
+          setIsGenericLink(isPlaceholder)
           setStatus('valid')
         } else {
           setStatus('invalid')
@@ -31,6 +37,15 @@ export default function InviteLandingPage() {
       })
       .catch(() => setStatus('invalid'))
   }, [token])
+
+  const handleJoin = () => {
+    if (isGenericLink) {
+      // Don't pass fake email — signup page will let them enter their own
+      router.push(`/signup?token=${token}&generic=1&role=${inviteRole}`)
+    } else {
+      router.push(`/signup?token=${token}&email=${encodeURIComponent(inviteEmail)}&role=${inviteRole}`)
+    }
+  }
 
   if (status === 'loading') return (
     <div className="flex flex-col items-center justify-center min-h-screen gap-4">
@@ -64,7 +79,7 @@ export default function InviteLandingPage() {
           <div className="text-center mb-6">
             <p className="text-2xl mb-2">🎸</p>
             <h2 className="text-lg font-semibold text-foreground">{inviterName} invited you!</h2>
-            <p className="text-sm text-muted-foreground mt-1">You're joining the legendary Banglans crew</p>
+            <p className="text-sm text-muted-foreground mt-1">You&apos;re joining the legendary Banglans crew</p>
           </div>
           <div className="grid grid-cols-2 gap-3 mb-6">
             {[
@@ -80,7 +95,7 @@ export default function InviteLandingPage() {
             ))}
           </div>
           <button
-            onClick={() => router.push(`/signup?token=${token}&email=${encodeURIComponent(inviteEmail)}`)}
+            onClick={handleJoin}
             className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 transition-all amber-glow"
           >
             Join the Banglans 🔥

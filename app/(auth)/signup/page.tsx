@@ -13,17 +13,38 @@ function SignupForm() {
   const [magicLinkSent, setMagicLinkSent] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteToken, setInviteToken] = useState('')
-  const [inviterName, setInviterName] = useState('')
+  const [inviteRole, setInviteRole] = useState('admin')
+  const [isGenericLink, setIsGenericLink] = useState(false)
   const [isFirstUser, setIsFirstUser] = useState(false)
   const [checkingFirst, setCheckingFirst] = useState(true)
   const router = useRouter()
   const searchParams = useSearchParams()
 
+  // Email is editable when: first user, OR generic invite link (no real email)
+  const emailEditable = isFirstUser || isGenericLink
+
   useEffect(() => {
     const token = searchParams.get('token')
     const emailParam = searchParams.get('email')
+    const genericParam = searchParams.get('generic')
+    const roleParam = searchParams.get('role')
+
     if (token) setInviteToken(token)
-    if (emailParam) { setInviteEmail(emailParam); setEmail(emailParam) }
+    if (roleParam) setInviteRole(roleParam)
+
+    if (genericParam === '1') {
+      // Generic invite link — let user enter their own email
+      setIsGenericLink(true)
+    } else if (emailParam) {
+      // Specific invite — check if it's a real or placeholder email
+      const isPlaceholder = emailParam.includes('@banglans-diary.app') || emailParam.startsWith('invite-')
+      if (isPlaceholder) {
+        setIsGenericLink(true)
+      } else {
+        setInviteEmail(emailParam)
+        setEmail(emailParam)
+      }
+    }
 
     // Check if there are any existing users (first user = admin, no invite needed)
     fetch('/api/members')
@@ -52,15 +73,16 @@ function SignupForm() {
       setError('Please enter your name.')
       return
     }
-    setLoading(true)
-    setError('')
 
-    const signupEmail = (isFirstUser ? email : inviteEmail).trim()
+    // Determine which email to use
+    const signupEmail = emailEditable ? email.trim() : inviteEmail.trim()
     if (!signupEmail) {
-      setError('Email is required.')
-      setLoading(false)
+      setError('Please enter your email.')
       return
     }
+
+    setLoading(true)
+    setError('')
 
     const supabase = createClient()
 
@@ -102,7 +124,7 @@ function SignupForm() {
 
   // Magic link sent — show confirmation
   if (magicLinkSent) {
-    const displayEmail = isFirstUser ? email : inviteEmail
+    const displayEmail = emailEditable ? email : inviteEmail
     return (
       <div className="w-full max-w-md mx-auto px-4">
         <div className="rock-card rounded-2xl overflow-hidden">
@@ -147,17 +169,15 @@ function SignupForm() {
           <p className="text-muted-foreground text-sm mt-2">
             {isFirstUser
               ? 'Welcome, founding Banglan 🤘 You\'ll be made admin.'
-              : inviterName
-                ? `${inviterName} invited you to join the Banglans 🔥`
-                : 'Join the legend'}
+              : 'Join the legend 🔥'}
           </p>
         </div>
         <div className="px-8 py-8">
           <form onSubmit={handleSignup} className="space-y-4">
-            {/* Email — editable for first user, locked for invited users */}
+            {/* Email */}
             <div>
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5 block">Your Email</label>
-              {isFirstUser ? (
+              {emailEditable ? (
                 <input
                   type="email"
                   value={email}
