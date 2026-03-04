@@ -3,7 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Guitar, Image, BookOpen, Calendar, Map, Trophy, Music, MessageSquare, Users, Settings, LogOut, Plus, Menu, X, MessagesSquare, BarChart3 } from 'lucide-react'
+import { Guitar, Image, BookOpen, Map, Trophy, Music, Users, Settings, LogOut, Plus, Menu, X, BarChart3, Gamepad2 } from 'lucide-react'
 import type { User } from '@/types'
 
 interface NavbarProps { user: User | null }
@@ -11,16 +11,14 @@ interface NavbarProps { user: User | null }
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Photos', icon: Image },
   { href: '/albums', label: 'Albums', icon: BookOpen },
-  { href: '/year-wall', label: 'Year Wall', icon: Calendar },
   { href: '/trips', label: 'Trips', icon: Map },
-  { href: '/wall-of-fame', label: 'Wall', icon: Trophy },
+  { href: '/wall-of-fame', label: 'Legends', icon: Trophy },
   { href: '/soundtrack', label: 'Sounds', icon: Music },
-  { href: '/board', label: 'Board', icon: MessageSquare },
-  { href: '/chat', label: 'Chat', icon: MessagesSquare },
   { href: '/polls', label: 'Polls', icon: BarChart3 },
+  { href: '/games', label: 'Games', icon: Gamepad2 },
 ]
 
-const MOBILE_MAIN = ['/dashboard', '/albums', '/trips', '/chat']
+const MOBILE_MAIN = ['/dashboard', '/albums', '/soundtrack', '/trips']
 
 function getInitials(name?: string) {
   if (!name) return '?'
@@ -31,6 +29,7 @@ export function Navbar({ user }: NavbarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
   const isAdmin = user?.role === 'admin'
 
   const handleLogout = async () => {
@@ -76,27 +75,35 @@ export function Navbar({ user }: NavbarProps) {
                 Add Photo
               </button>
             )}
-            <div className="relative group">
-              <button className="flex items-center gap-2 px-2 py-1 rounded-full hover:bg-secondary transition-colors">
+            <div className="relative">
+              <button
+                onClick={() => setProfileOpen(p => !p)}
+                className="flex items-center gap-2 px-2 py-1 rounded-full hover:bg-secondary transition-colors"
+              >
                 <div className="w-7 h-7 rounded-full bg-primary/20 text-primary text-xs font-semibold flex items-center justify-center border border-primary/20">
                   {getInitials(user?.full_name)}
                 </div>
                 <span className="text-xs text-muted-foreground max-w-24 truncate">{user?.nickname || user?.full_name?.split(' ')[0]}</span>
               </button>
-              <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-xl shadow-2xl py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
-                <Link href="/settings" className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors">
-                  <Settings className="w-4 h-4" /><span>Settings</span>
-                </Link>
-                {isAdmin && (
-                  <Link href="/invite-members" className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors">
-                    <Users className="w-4 h-4" /><span>Invite Members</span>
-                  </Link>
-                )}
-                <div className="my-1 border-t border-border" />
-                <button onClick={handleLogout} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-destructive hover:bg-secondary transition-colors">
-                  <LogOut className="w-4 h-4" /><span>Sign Out</span>
-                </button>
-              </div>
+              {profileOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-xl shadow-2xl py-1 z-50 animate-in fade-in zoom-in-95 duration-150">
+                    <Link href="/settings" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-secondary active:bg-secondary/80 transition-colors">
+                      <Settings className="w-4 h-4" /><span>Settings</span>
+                    </Link>
+                    {isAdmin && (
+                      <Link href="/invite-members" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm text-foreground hover:bg-secondary active:bg-secondary/80 transition-colors">
+                        <Users className="w-4 h-4" /><span>Invite Members</span>
+                      </Link>
+                    )}
+                    <div className="my-1 border-t border-border" />
+                    <button onClick={() => { setProfileOpen(false); handleLogout() }} className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-destructive hover:bg-secondary active:bg-secondary/80 transition-colors">
+                      <LogOut className="w-4 h-4" /><span>Sign Out</span>
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -110,7 +117,7 @@ export function Navbar({ user }: NavbarProps) {
             const Icon = item.icon
             const active = pathname === href || pathname.startsWith(href + '/')
             return (
-              <Link key={href} href={href} className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all ${active ? 'text-primary' : 'text-muted-foreground'}`}>
+              <Link key={href} href={href} className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all active:scale-90 active:opacity-70 ${active ? 'text-primary' : 'text-muted-foreground'}`}>
                 <Icon className="w-5 h-5" />
                 <span className="text-[10px] font-medium">{item.label}</span>
               </Link>
@@ -124,7 +131,7 @@ export function Navbar({ user }: NavbarProps) {
               <span className="text-[10px] font-medium text-primary mt-0.5">Upload</span>
             </button>
           )}
-          <button onClick={() => setMenuOpen(true)} className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-muted-foreground">
+          <button onClick={() => setMenuOpen(true)} className="flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl text-muted-foreground active:scale-90 active:opacity-70 transition-all">
             <Menu className="w-5 h-5" />
             <span className="text-[10px] font-medium">More</span>
           </button>
@@ -149,21 +156,18 @@ export function Navbar({ user }: NavbarProps) {
             <div className="space-y-1">
               {[
                 { href: '/members', label: 'The Banglans', icon: Users },
-                { href: '/wall-of-fame', label: 'Wall of Fame', icon: Trophy },
-                { href: '/soundtrack', label: 'Banglan Mixtape', icon: Music },
-                { href: '/board', label: 'The Board', icon: MessageSquare },
+                { href: '/wall-of-fame', label: 'Legends', icon: Trophy },
                 { href: '/polls', label: 'Polls', icon: BarChart3 },
-                { href: '/year-wall', label: 'Year Wall', icon: Calendar },
                 { href: '/settings', label: 'Settings', icon: Settings },
                 ...(isAdmin ? [{ href: '/invite-members', label: 'Invite Members', icon: Users }] : []),
               ].map(({ href, label, icon: Icon }) => (
-                <Link key={href} href={href} onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
+                <Link key={href} href={href} onClick={() => setMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary active:bg-secondary/80 transition-colors">
                   <Icon className="w-5 h-5 text-primary" />
                   <span className="text-sm text-foreground">{label}</span>
                 </Link>
               ))}
               <div className="my-2 border-t border-border" />
-              <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary transition-colors">
+              <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-secondary active:bg-secondary/80 transition-colors">
                 <LogOut className="w-5 h-5 text-destructive" />
                 <span className="text-sm text-destructive">Sign Out</span>
               </button>
