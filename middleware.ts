@@ -2,9 +2,19 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  // Skip auth refresh for API routes — they handle their own auth
   const { pathname } = request.nextUrl
-  if (pathname.startsWith('/api/')) {
+
+  // Public routes — skip auth check entirely
+  const isPublicRoute =
+    pathname.startsWith('/api/') ||
+    pathname.startsWith('/sb/') ||  // Supabase proxy — must pass through untouched
+    pathname === '/login' ||
+    pathname === '/signup' ||
+    pathname === '/reset-password' ||
+    pathname.startsWith('/invite/') ||
+    pathname.startsWith('/auth/')
+
+  if (isPublicRoute) {
     return NextResponse.next({ request })
   }
 
@@ -19,7 +29,7 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
@@ -29,8 +39,15 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Refresh session — important for magic links
-  await supabase.auth.getUser()
+  // Use getSession() — reads from cookie, no network call (~500ms saved per request)
+  const { data: { session } } = await supabase.auth.getSession()
+
+  // If user is NOT logged in and trying to access a protected route → redirect to login
+  if (!session?.user) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
+  }
 
   return supabaseResponse
 }
