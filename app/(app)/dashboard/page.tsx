@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Plus, Zap, Image as ImageIcon } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
 import { PhotoCard } from '@/components/photos/PhotoCard'
 import { PhotoLightbox } from '@/components/photos/PhotoLightbox'
 import { UploadModal } from '@/components/photos/UploadModal'
@@ -32,31 +31,20 @@ export default function DashboardPage() {
 
   const loadData = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
-    const supabase = createClient()
 
-    const [photosResult, albumsResult] = await Promise.all([
-      supabase
-        .from('photos')
-        .select('*, uploader:profiles(*), likes(user_id), comments(count)')
-        .order('created_at', { ascending: false })
-        .limit(50),
+    const [photosData, albumsResult] = await Promise.all([
+      fetch('/api/photos').then(r => r.ok ? r.json() : null).catch(() => null),
       fetch('/api/albums').then(r => r.ok ? r.json() : null).catch(() => null),
     ])
 
-    if (photosResult.data) {
-      const enriched = photosResult.data.map((p: any) => ({
-        ...p,
-        likes_count: p.likes?.length ?? 0,
-        user_has_liked: authUser ? p.likes?.some((l: any) => l.user_id === authUser.id) : false,
-        comments_count: p.comments?.[0]?.count ?? 0,
-      }))
-      setPhotos(enriched)
+    if (Array.isArray(photosData)) {
+      setPhotos(photosData)
     }
     if (Array.isArray(albumsResult)) {
       setAlbums(albumsResult.map((a: any) => ({ ...a, photo_count: a.photo_count ?? 0 })))
     }
     setLoading(false)
-  }, [authUser])
+  }, [])
 
   useEffect(() => { loadData() }, [loadData])
 
