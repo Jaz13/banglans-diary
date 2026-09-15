@@ -1,0 +1,17 @@
+{
+  "name": "Banglan's Diary",
+  "install": "npm ci",
+  "terminals": [
+    {
+      "name": "dev",
+      "command": "npm run dev",
+      "description": "Next.js dev server (http://localhost:3000). Serves the app with hot reload."
+    }
+  ],
+  "ports": [
+    {
+      "name": "web",
+      "port": 3000
+    }
+  ]
+}
